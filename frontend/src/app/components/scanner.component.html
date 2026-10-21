@@ -1,0 +1,10 @@
+<div class="space-y-3">
+  <div id="camera-reader" class="overflow-hidden rounded-2xl bg-slate-950 text-white"></div>
+  @if (error()) {
+    <p class="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ error() }}</p>
+  }
+  <button type="button" class="btn-secondary w-full" [disabled]="loading()" (click)="toggle()">
+    @if (loading()) { Abrindo câmera… } @else if (active()) { Fechar câmera } @else { Abrir câmera • QR / código de barras }
+  </button>
+  <p class="text-xs leading-5 text-slate-500">Autorize a câmera no navegador. No celular, é necessário HTTPS.</p>
+</div>
