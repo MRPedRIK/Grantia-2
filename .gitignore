@@ -1,4 +1,6 @@
+.env
 node_modules/
 dist/
-.env
+.angular/
 *.log
+.DS_Store

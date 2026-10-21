@@ -1,0 +1,72 @@
+<div class="min-h-screen">
+  <header class="bg-slate-950 text-white">
+    <div class="mx-auto flex max-w-4xl items-center justify-between p-5">
+      <div><p class="text-xs font-semibold uppercase tracking-[.25em] text-teal-300">Gestão de TI</p><h1 class="text-3xl font-extrabold tracking-tight">Grantia<span class="text-teal-400">.</span></h1></div>
+      @if (auth.user()) { <button type="button" class="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold" (click)="logout()">Sair</button> }
+    </div>
+  </header>
+  <main class="mx-auto max-w-4xl space-y-5 p-4 pb-16 sm:p-6">
+    @if (!online()) { <div role="status" class="rounded-xl bg-amber-100 p-4 text-amber-900">Sem conexão. Consultas e movimentações exigem internet.</div> }
+    @if (error()) { <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">{{ error() }}</div> }
+    @if (notice()) { <div role="status" class="rounded-xl border border-teal-200 bg-teal-50 p-4 text-teal-800">{{ notice() }}</div> }
+
+    @if (!auth.user()) {
+      <section class="card mx-auto mt-8 max-w-md space-y-5">
+        <div class="rounded-2xl bg-teal-50 px-4 py-5"><p class="font-bold text-teal-800">Controle de patrimônio</p><p class="mt-1 text-sm text-teal-900">Rastreie equipamentos da unidade ao suporte e de volta.</p></div>
+        <h2 class="text-xl font-bold">Acesse sua conta</h2>
+        <form (ngSubmit)="login()" class="space-y-4">
+          <label>E-mail<input type="email" name="email" autocomplete="username" [(ngModel)]="email" required placeholder="admin@local"></label>
+          <label>Senha<input type="password" name="password" autocomplete="current-password" [(ngModel)]="password" required></label>
+          <button class="btn-primary w-full" [disabled]="busy()">{{ busy() ? 'Entrando…' : 'Entrar no sistema' }}</button>
+        </form>
+      </section>
+    } @else {
+      <div><p class="text-sm text-slate-500">Olá, {{ auth.user()?.name }}</p><h2 class="mt-1 text-2xl font-bold tracking-tight">Controle de equipamentos</h2></div>
+      <nav aria-label="Navegação" class="flex flex-wrap gap-2">
+        <button type="button" class="tab" [class.tab-active]="tab()==='scan'" (click)="changeTab('scan')">Consultar</button>
+        @if (auth.user()?.role !== 'user') {
+          <button type="button" class="tab" [class.tab-active]="tab()==='assets'" (click)="changeTab('assets')">Novo equipamento</button>
+        }
+        @if (auth.user()?.role === 'admin') {
+          <button type="button" class="tab" [class.tab-active]="tab()==='users'" (click)="changeTab('users')">Nova pessoa</button>
+        }
+      </nav>
+      @switch (tab()) {
+        @case ('scan') {
+          <section class="card space-y-4">
+            <div><h2 class="text-xl font-bold">Localizar patrimônio</h2><p class="mt-1 text-sm text-slate-500">Leia a etiqueta pelo celular ou digite o número.</p></div>
+            <app-scanner (scanned)="lookup($event)"></app-scanner>
+            <form class="flex items-end gap-3" (ngSubmit)="lookup(searchTerm)">
+              <label class="min-w-0 flex-1">Número de patrimônio<input name="searchTerm" [(ngModel)]="searchTerm" maxlength="100" required placeholder="Ex.: RP113355"></label>
+              <button class="btn-primary" [disabled]="busy()">{{ busy() ? 'Buscando…' : 'Buscar' }}</button>
+            </form>
+          </section>
+          @if (asset(); as current) { <app-workflow [asset]="current" [user]="auth.user()!" (changed)="refreshAsset()"></app-workflow> }
+        }
+        @case ('assets') {
+          <section class="card"><h2 class="mb-5 text-xl font-bold">Cadastrar equipamento</h2>
+            <form (ngSubmit)="registerAsset()" class="space-y-4">
+              <label>Número de patrimônio<input name="patrimony_number" [(ngModel)]="newAsset.patrimony_number" maxlength="100" required></label>
+              <label>Tipo de equipamento<input name="device_type" [(ngModel)]="newAsset.device_type" maxlength="100" required></label>
+              <label>Modelo<input name="model" [(ngModel)]="newAsset.model" maxlength="200" required></label>
+              <label>Unidade / localização de origem<input name="current_location" [(ngModel)]="newAsset.current_location" maxlength="200" required></label>
+              <button class="btn-primary w-full" [disabled]="busy()">Cadastrar equipamento</button>
+            </form>
+          </section>
+        }
+        @case ('users') {
+          <section class="card"><h2 class="mb-5 text-xl font-bold">Cadastrar pessoa</h2>
+            <form (ngSubmit)="registerUser()" class="space-y-4">
+              <label>Nome<input name="name" [(ngModel)]="newUser.name" maxlength="100" required></label>
+              <label>E-mail<input name="email" type="email" [(ngModel)]="newUser.email" maxlength="200" required></label>
+              <label>Senha (mínimo 12 caracteres)<input name="password" type="password" [(ngModel)]="newUser.password" minlength="12" maxlength="200" required></label>
+              <label>Perfil<select name="role" [(ngModel)]="newUser.role"><option value="user">Usuário</option><option value="tech">Técnico</option><option value="admin">Administrador</option></select></label>
+              <button class="btn-primary w-full" [disabled]="busy()">Cadastrar pessoa</button>
+            </form>
+          </section>
+        }
+      }
+    }
+    <footer class="pt-4 text-center text-xs text-slate-500">Grantia • Histórico completo de cada movimentação</footer>
+  </main>
+</div>
