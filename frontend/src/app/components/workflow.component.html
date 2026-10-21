@@ -1,0 +1,63 @@
+<div class="space-y-5">
+  <section class="card space-y-5">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div><p class="text-xs font-bold uppercase tracking-[.2em] text-teal-700">Patrimônio</p><h2 class="mt-1 break-all text-3xl font-extrabold">{{ asset.patrimony_number }}</h2></div>
+      <span class="rounded-full bg-teal-100 px-3 py-2 text-sm font-bold text-teal-800">{{ statusLabels[asset.status] }}</span>
+    </div>
+    <dl class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+      <div><dt class="text-slate-500">Equipamento</dt><dd class="mt-1 font-semibold">{{ asset.device_type }}</dd></div>
+      <div><dt class="text-slate-500">Modelo</dt><dd class="mt-1 font-semibold">{{ asset.model }}</dd></div>
+      <div><dt class="text-slate-500">Localização atual</dt><dd class="mt-1 font-semibold">{{ asset.current_location }}</dd></div>
+      <div><dt class="text-slate-500">Técnico responsável</dt><dd class="mt-1 font-semibold">{{ asset.tech_name || 'Não atribuído' }}</dd></div>
+    </dl>
+  </section>
+  <section class="card space-y-4">
+    <h2 class="text-xl font-bold">Próxima movimentação</h2>
+    @if (permitted) {
+      <form class="space-y-4" (ngSubmit)="submit()">
+        @if (action === 'assign') {
+          <label>Técnico responsável
+            <select name="assignedTechId" [(ngModel)]="assignedTechId" required>
+              <option [ngValue]="null" disabled>Selecione um técnico</option>
+              @for (tech of technicians(); track tech.id) { <option [ngValue]="tech.id">{{ tech.name }}</option> }
+            </select>
+          </label>
+        }
+        @if (action === 'return') {
+          <label>Quem retirou o equipamento<input name="collector" [(ngModel)]="collector" maxlength="200" required></label>
+          <label>Quem fará a entrega<input name="deliverer" [(ngModel)]="deliverer" maxlength="200" required></label>
+        }
+        <label>{{ action === 'send' ? 'Descrição do defeito' : action === 'return' ? 'Reparo realizado' : 'Observações' }}
+          <textarea name="notes" [(ngModel)]="notes" rows="3" maxlength="2000" [required]="action === 'send' || action === 'return'"></textarea>
+        </label>
+        <button class="btn-primary w-full" [disabled]="busy()">{{ busy() ? 'Registrando…' : actionLabels[action] }}</button>
+      </form>
+    } @else { <p class="text-sm text-slate-600">Esta etapa só pode ser concluída pelo suporte responsável.</p> }
+    @if (error()) { <p class="text-sm text-red-700" role="alert">{{ error() }}</p> }
+    @if (success()) { <p class="text-sm text-teal-700" role="status">{{ success() }}</p> }
+  </section>
+  <section class="card">
+    <h2 class="mb-4 text-xl font-bold">Chamados</h2>
+    @for (ticket of asset.tickets; track ticket.id) {
+      <article class="border-b border-slate-100 py-3">
+        <p class="font-bold">#{{ ticket.id }} • {{ ticket.status === 'open' ? 'Aberto' : 'Encerrado' }}</p>
+        <p class="mt-1 whitespace-pre-wrap text-sm">{{ ticket.description }}</p>
+        <p class="mt-2 text-xs text-slate-500">{{ date(ticket.created_at) }}</p>
+      </article>
+    } @empty { <p class="text-sm text-slate-500">Nenhum chamado registrado.</p> }
+  </section>
+  <section class="card">
+    <h2 class="mb-4 text-xl font-bold">Histórico de custódia</h2>
+    <ol class="space-y-5">
+      @for (log of asset.logs; track log.id) {
+        <li class="border-l-2 border-teal-500 pl-4">
+          <p class="font-bold">{{ label(log.action_type) }}</p>
+          <p class="mt-1 break-words text-sm">{{ log.from_location }} → {{ log.to_location }}</p>
+          <p class="mt-1 text-xs text-slate-500">{{ log.handler_name }} • {{ date(log.timestamp) }}</p>
+          @if (log.collector) { <p class="mt-2 text-sm">Retirou: {{ log.collector }} • Entregará: {{ log.deliverer }}</p> }
+          @if (log.notes) { <p class="mt-2 whitespace-pre-wrap text-sm">{{ log.notes }}</p> }
+        </li>
+      } @empty { <li class="text-sm text-slate-500">Nenhuma movimentação registrada.</li> }
+    </ol>
+  </section>
+</div>
